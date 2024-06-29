@@ -7,6 +7,7 @@ import {
   IconDownload,
   IconShare,
 } from "@tabler/icons-react";
+import { SignOutButton } from "@clerk/clerk-react";
 const Details = () => {
   return (
     <div className="details">
@@ -79,7 +80,7 @@ const Details = () => {
             </div>
           </div>
           <button className="btn blockBtn">Block User!</button>
-          <button className="btn logoutBtn">Logout!</button>
+          <SignOutButton className="btn logoutBtn" />
         </div>
       </div>
     </div>

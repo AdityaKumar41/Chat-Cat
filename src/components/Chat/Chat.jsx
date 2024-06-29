@@ -14,15 +14,39 @@ import EmojiPicker from "emoji-picker-react";
 const Chat = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const emojiPickerRef = useRef(null);
+  // Handle emoji click
   const handleEmoji = (event) => {
     setMessage((prev) => prev + event.emoji);
   };
+  // Close emoji picker when clicked outside
+  const handleClickOutside = (event) => {
+    if (
+      emojiPickerRef.current &&
+      !emojiPickerRef.current.contains(event.target)
+    ) {
+      setOpen(false);
+    }
+  };
 
+  // Add event listener when component mounts
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Scroll to the end of the chat
   const endsWith = useRef(null);
 
   useEffect(() => {
     endsWith.current.scrollIntoView({ behavior: "smooth" });
   }, [message]);
+
+  useEffect(()=>{
+    
+  })
   return (
     <div className="chat">
       <div className="top">
@@ -106,7 +130,7 @@ const Chat = () => {
             onClick={() => setOpen((prev) => !prev)}
             className="emojipick"
           />
-          <div className="picker">
+          <div className="picker" ref={emojiPickerRef}>
             <EmojiPicker open={open} onEmojiClick={handleEmoji} />
           </div>
         </div>
