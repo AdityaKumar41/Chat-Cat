@@ -30,6 +30,7 @@
     cursor: pointer;
   }
   .items {
+    position: relative;
     display: flex;
     align-items: center;
     padding: 20px;
@@ -58,6 +59,18 @@
         opacity: 0.7;
       }
     }
+    .badge {
+      position: absolute;
+      top: 40%;
+      min-width: 22px;
+      height: 22px;
+      right: 12px;
+      background-color: #b53f3f;
+      color: white;
+      border-radius: 50%;
+      /* padding: 2px; */
+      text-align: center;
+    }
   }
 }
 .chatlist::-webkit-scrollbar {
@@ -66,4 +79,7 @@
 .chatlist::-webkit-scrollbar-thumb {
   background-color: #d9d9d96b;
   border-radius: 10px;
+}
+.skeleton{
+  background-color: rgba(0, 0, 0, 0.326);
 }

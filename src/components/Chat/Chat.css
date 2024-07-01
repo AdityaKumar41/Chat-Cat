@@ -26,7 +26,6 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
-
         span {
           font-size: 17px;
           font-weight: 500;
@@ -51,11 +50,27 @@
     display: flex;
     flex-direction: column;
     gap: 20px;
+    .s-right {
+      float: right;
+      background-color: #8886866f;
+      color: white;
+      padding: 10px 18px;
+      position: relative;
+      margin: 10px 0;
+      border-radius: 20px 0px 20px 20px;
+      padding-bottom: 20px;
+      min-width: 100px;
+    }
+    .s-left {
+      float: left;
+      background-color: #ffffff6f;
+    }
 
     .messages {
       max-width: 60%;
       display: flex;
       gap: 20px;
+
       img {
         width: 30px;
         height: 30px;
@@ -64,7 +79,7 @@
       }
       .texts {
         background-color: #f9f9f9;
-
+        min-width: 100px;
         color: black;
         padding: 10px 18px;
         position: relative;
@@ -72,16 +87,13 @@
         border-radius: 0px 20px 20px 20px;
         /* padding-top: 25px; */
         padding-bottom: 20px;
-        /* .name {
-          position: absolute;
-          top: 4px;
-          left: 18px;
-          font-size: 14px;
-          color: rgba(0, 0, 0, 0.7);
-          font-weight: 700;
-          text-decoration: underline;
-        } */
+        img {
+          width: 100%;
+          height: 300px;
+          border-radius: 20px;
+        }
       }
+
       .texts span {
         font-size: 12px;
         color: rgba(0, 0, 0, 0.7);
@@ -99,6 +111,7 @@
           margin: 10px 0;
           border-radius: 20px 0px 20px 20px;
           padding-bottom: 20px;
+          min-width: 100px;
           img {
             width: 100%;
             height: 300px;
@@ -122,11 +135,35 @@
         }
 
         .texts span {
-          font-size: 12px;
+          font-size: 10px;
           color: rgba(255, 255, 255, 0.7);
           position: absolute;
           bottom: 5px;
           right: 15px;
+        }
+      }
+      .texts {
+        .media {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .media-icon {
+          margin-right: 8px;
+          .pdf-file {
+            background-color: #ffffff6f;
+          }
+        }
+
+        .media-text a {
+          text-decoration: none;
+          color: inherit;
+        }
+
+        .media-text span {
+          position: relative;
+          white-space: nowrap;
         }
       }
     }
@@ -181,8 +218,47 @@
       border-radius: 10px;
       cursor: pointer;
     }
+    &.disabled {
+      input {
+        background-color: #ffffff11;
+        color: #ffffff44;
+      }
+      .sendBtn {
+        background-color: #2e86de9d;
+        color: #ffffff44;
+        cursor: not-allowed;
+      }
+    }
     .emojipick {
       cursor: pointer;
     }
   }
+}
+
+.popup-media {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  object-fit: contain;
+}
+
+.popup-content {
+  position: relative;
+}
+
+.popup-content img,
+.popup-content video {
+  width: 500px;
+  height: 500px;
+  /* border: 2px solid #fff; */
+  border-radius: 5px;
+  margin: auto;
+  object-fit: contain;
 }

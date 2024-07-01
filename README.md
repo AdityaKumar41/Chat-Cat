@@ -1,8 +1,59 @@
-# React + Vite
+# Realtime Chatting Application
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Table of Contents
 
-Currently, two official plugins are available:
+- [Introduction](#introduction)
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Technologies Used](#technologies-used)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Frontend Setup](#frontend-setup)
+  - [Backend Setup](#backend-setup)
+  - [Running the App](#running-the-app)
+- [Firebase Setup](#firebase-setup)
+- [Clerk Authentication Setup](#clerk-authentication-setup)
+- [ngrok Setup](#ngrok-setup)
+- [Contributing](#contributing)
+- [License](#license)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Introduction
+
+This is a real-time chat application built with React and Firebase. The application supports user authentication via Clerk and enables real-time messaging between users. The backend is powered by Firebase, which handles data storage, user authentication, and real-time updates.
+
+## Features
+
+- User authentication with Clerk
+- Real-time messaging with Firebase
+- Search for users
+- Add and remove users from the chat list
+- Responsive design
+
+## Screenshots
+
+![Screenshot 1](link-to-screenshot1)
+![Screenshot 2](link-to-screenshot2)
+
+## Technologies Used
+
+- React
+- Firebase (Firestore)
+- Clerk (Authentication)
+- CSS Modules
+- React Icons
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js and npm installed
+- Firebase account and project setup
+- Clerk account
+- ngrok account
+
+### Frontend Setup
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/your-username/your-repo-name.git
+   cd your-repo-name

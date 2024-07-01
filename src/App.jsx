@@ -8,11 +8,14 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { Toaster, toast } from "sonner";
 import { useUserStore } from "./components/store/userStore";
+import { useChatStore } from "./components/store/chatStore";
+import Empty from "./components/Empty/Empty";
 
 const App = () => {
   const { user, isLoaded } = useUser();
   const { currentUser, isLoading, fetchUserInfo, resetUserInfo } =
     useUserStore();
+  const { chatId } = useChatStore();
   useEffect(() => {
     if (isLoaded && user) {
       fetchUserInfo(user.id);
@@ -33,8 +36,8 @@ const App = () => {
       <SignedIn>
         <Toaster />
         <List></List>
-        <Chat></Chat>
-        <Details></Details>
+        {chatId ? <Chat></Chat> : <Empty />}
+        {chatId && <Details></Details>}
       </SignedIn>
     </div>
   );

@@ -11,6 +11,10 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.2.5",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.5",
+    "@mui/material": "^5.15.21",
+    "@mui/styled-engine-sc": "^6.0.0-alpha.18",
     "@tabler/icons-react": "^3.7.0",
     "dotenv": "^16.4.5",
     "emoji-picker-react": "^4.10.0",
@@ -18,9 +22,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-loading": "^2.0.3",
-    "react-loading-skeleton": "^3.4.0",
     "react-router-dom": "^6.24.0",
     "sonner": "^1.5.0",
+    "styled-components": "^6.1.11",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

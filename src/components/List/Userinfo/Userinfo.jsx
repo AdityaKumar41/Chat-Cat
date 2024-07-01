@@ -14,7 +14,6 @@ const Userinfo = () => {
         </div>
       </div>
       <div className="icons">
-        <IconEdit size={30} strokeWidth={1} />
         <IconDots size={30} strokeWidth={1} />
       </div>
     </div>

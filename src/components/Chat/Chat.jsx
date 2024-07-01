@@ -8,18 +8,42 @@ import {
   IconPhotoScan,
   IconCamera,
   IconMicrophone,
+  IconPhotoX,
+  IconFileFilled,
+  IconX,
 } from "@tabler/icons-react";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import { db, storage } from "../../lib/firebase";
+import {
+  onSnapshot,
+  doc,
+  updateDoc,
+  arrayUnion,
+  getDoc,
+} from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import EmojiPicker from "emoji-picker-react";
+import { useChatStore } from "../store/chatStore";
+import { useUserStore } from "../store/userStore";
+import { Toaster, toast } from "sonner";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [chats, setChats] = useState(null);
+  const [file, setFile] = useState(null);
+  const [isLoading, setLoading] = useState(false);
+  const [popupMedia, setPopupMedia] = useState(null);
   const emojiPickerRef = useRef(null);
-  // Handle emoji click
+  const { chatId, user, setChat } = useChatStore();
+  const { currentUser } = useUserStore();
+  const notificationSoundRef = useRef(new Audio("./whatsapp_web.mp3"));
+
   const handleEmoji = (event) => {
     setMessage((prev) => prev + event.emoji);
   };
-  // Close emoji picker when clicked outside
+
   const handleClickOutside = (event) => {
     if (
       emojiPickerRef.current &&
@@ -29,7 +53,6 @@ const Chat = () => {
     }
   };
 
-  // Add event listener when component mounts
   useEffect(() => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
@@ -37,105 +60,366 @@ const Chat = () => {
     };
   }, []);
 
-  // Scroll to the end of the chat
   const endsWith = useRef(null);
 
   useEffect(() => {
     endsWith.current.scrollIntoView({ behavior: "smooth" });
-  }, [message]);
+    setChat(true);
+  }, [chats?.messages]);
 
-  useEffect(()=>{
-    
-  })
+  useEffect(() => {
+    const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
+      setChats(res.data());
+    });
+
+    const resetUnreadCount = async () => {
+      const userChatRef = doc(db, "userschats", currentUser.id);
+      const userChatsSnapshot = await getDoc(userChatRef);
+      if (userChatsSnapshot.exists()) {
+        const userChats = userChatsSnapshot.data();
+        const chatIndex = userChats.chats.findIndex(
+          (chat) => chat.chatId === chatId
+        );
+
+        if (chatIndex !== -1) {
+          userChats.chats[chatIndex].unreadCount = 0;
+          userChats.chats[chatIndex].isSeen = true;
+
+          await updateDoc(userChatRef, {
+            chats: userChats.chats,
+          });
+
+          const receiverChatRef = doc(db, "userschats", user.id);
+          const receiverChatsSnapshot = await getDoc(receiverChatRef);
+          if (receiverChatsSnapshot.exists()) {
+            const receiverChats = receiverChatsSnapshot.data();
+            const receiverChatIndex = receiverChats.chats.findIndex(
+              (chat) => chat.chatId === chatId
+            );
+
+            if (receiverChatIndex !== -1) {
+              receiverChats.chats[receiverChatIndex].isSeen = true;
+
+              await updateDoc(receiverChatRef, {
+                chats: receiverChats.chats,
+              });
+            }
+          }
+        }
+      }
+    };
+
+    resetUnreadCount();
+
+    return () => unSub();
+  }, [chatId, currentUser.id, user.id]);
+
+  const uploadFile = async (file) => {
+    const storageRef = ref(storage, `chatFiles/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    return await getDownloadURL(storageRef);
+  };
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (message === "" && !file) return;
+
+    let fileUrl = null;
+    if (file) {
+      fileUrl = URL.createObjectURL(file); // Optimistically show the image
+    }
+
+    const newMessage = {
+      senderId: currentUser.id,
+      message,
+      file: fileUrl ? { url: fileUrl, type: file.type, name: file.name } : null,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Optimistically update the chat for the sender
+    setChats((prev) => ({
+      ...prev,
+      messages: [...(prev?.messages || []), newMessage],
+    }));
+
+    setMessage("");
+    setFile(null);
+
+    try {
+      setLoading(true); // Start loading indicator
+      if (file) {
+        fileUrl = await uploadFile(file);
+        toast.success("File uploaded successfully!");
+      }
+
+      // Update the message with the actual file URL
+      newMessage.file = fileUrl
+        ? { url: fileUrl, type: file.type, name: file.name }
+        : null;
+
+      await updateDoc(doc(db, "chats", chatId), {
+        messages: arrayUnion(newMessage),
+      });
+
+      const userIds = [currentUser.id, user.id];
+
+      for (const userId of userIds) {
+        const userChatRef = doc(db, "userschats", userId);
+        const userChatsSnapshot = await getDoc(userChatRef);
+        if (userChatsSnapshot.exists()) {
+          const userChats = userChatsSnapshot.data();
+          const chatIndex = userChats.chats.findIndex(
+            (chat) => chat.chatId === chatId
+          );
+
+          if (chatIndex !== -1) {
+            userChats.chats[chatIndex].lastMessage = message || "File";
+            userChats.chats[chatIndex].isSeen = userId === currentUser.id;
+            userChats.chats[chatIndex].updatedAt = new Date().toISOString();
+
+            if (userId !== currentUser.id) {
+              userChats.chats[chatIndex].unreadCount =
+                (userChats.chats[chatIndex].unreadCount || 0) + 1;
+            } else {
+              userChats.chats[chatIndex].unreadCount = 0;
+            }
+
+            await updateDoc(userChatRef, {
+              chats: userChats.chats,
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    setLoading(false);
+  };
+
+  const handleFile = (e) => {
+    if (e.target.files[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
+
+  const cancelFile = () => {
+    setFile(null);
+  };
+
+  const handleMediaClick = (media) => {
+    setPopupMedia(media);
+  };
+
+  const handleClosePopup = () => {
+    setPopupMedia(null);
+  };
+
+  const renderMedia = (message) => {
+    if (message.file) {
+      if (message.file.type.startsWith("image/")) {
+        return (
+          <div className="media" onClick={() => handleMediaClick(message.file)}>
+            <img src={message.file.url} alt="Image" />
+          </div>
+        );
+      } else if (message.file.type.startsWith("audio/")) {
+        return (
+          <div className="media flex">
+            <audio controls>
+              <source src={message.file.url} type={message.file.type} />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        );
+      } else if (message.file.type.startsWith("video/")) {
+        return (
+          <div className="media" onClick={() => handleMediaClick(message.file)}>
+            <video controls>
+              <source src={message.file.url} type={message.file.type} />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        );
+      } else if (message.file.type === "application/pdf") {
+        return (
+          <div className="media flex items-center relative">
+            <div className="media-icon">
+              <IconFileFilled />
+            </div>
+            <div className="media-text">
+              <a
+                href={message.file.url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span>{message.file.name}</span>
+              </a>
+            </div>
+          </div>
+        );
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="chat">
       <div className="top">
         <div className="userInfo">
-          <img src="/avatar.png" alt="" />
+          <img src={user?.imageUrl || "./avatar.png"} alt="" />
           <div className="text">
-            <span>John Doe</span>
-            <p>Lorem, ipsum dolorasd.</p>
+            <span>{user?.username}</span>
+            <p>{user?.firstName || user?.fullName}</p>
           </div>
         </div>
         <div className="icons">
-          <IconPhone />
-          <IconVideo />
+          {/* <IconPhone />
+          <IconVideo /> */}
           <IconInfoCircle />
         </div>
       </div>
       <div className="center">
-        <div className="messages">
-          <img src="/avatar.png" alt="" />
-          <div className="texts">
-            <p>
-              quam dolorum laudantium necessitatibus, aperiam quos soluta eaque
-              optio labore saepe quis similique.
-            </p>
-            <span>2 minutes ago</span>
-          </div>
-        </div>
-        <div className="messages">
-          <img src="/avatar.png" alt="" />
-          <div className="texts">
-            <p>
-              uam dolorum laudantium necessitatibus, aperiam quos soluta eaque
-              optio labore saepe quis similique.
-            </p>
-            <span>2 minutes ago</span>
-          </div>
-        </div>
-        <div className="messages own">
-          <div className="texts">
-            <p>Hello bhai kese ho??</p>
-            <span>2 minutes ago</span>
-          </div>
-        </div>
-        <div className="messages own">
-          <div className="texts">
-            <p>
-              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Odit,
-              voluptas?
-            </p>
-            <span>2 minutes ago</span>
-          </div>
-        </div>
-        <div className="messages own">
-          <div className="texts">
-            <img src="/bg.jpg" alt="" />
-            <p>
-              Lorem ipsum dolor, sit amet consectetur adipisicing elit. Repellat
-              magnam optio sit sequi corporis quisquam sed debitis, suscipit
-              itaque aliquam, hic numquam adipisci? Explicabo ex cupiditate
-              quae, earum suscipit tempore?
-            </p>
-            <span>2 minutes ago</span>
-          </div>
-        </div>
+        {!chats ? (
+          <>
+            <Skeleton
+              count={1}
+              height="60px"
+              width="80%"
+              className="messages s-right"
+              baseColor="#00000026"
+              highlightColor="rgba(0, 0, 0, 0.537)"
+            />
+            <Skeleton
+              count={1}
+              height="60px"
+              width="80%"
+              className="messages s-left"
+              baseColor="#00000026"
+              highlightColor="rgba(0, 0, 0, 0.537)"
+            />
+            <Skeleton
+              count={1}
+              height="60px"
+              width="80%"
+              className="messages s-right"
+              baseColor="#00000026"
+              highlightColor="rgba(0, 0, 0, 0.537)"
+            />
+            <Skeleton
+              count={1}
+              height="60px"
+              width="80%"
+              className="messages s-left"
+              baseColor="#00000026"
+              highlightColor="rgba(0, 0, 0, 0.537)"
+            />
+          </>
+        ) : (
+          chats.messages.map((chat, index) => (
+            <div
+              className={`messages ${
+                chat.senderId === currentUser.id ? "own" : ""
+              } relative`}
+              key={chat?.createdAt}
+            >
+              {chat.senderId !== currentUser.id && (
+                <img src={user.imageUrl} alt="" />
+              )}
+              <div className="texts">
+                {renderMedia(chat)}
+                <p>{chat?.message}</p>
+                <span className="absolute">
+                  {new Date(chat.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
         <div ref={endsWith}></div>
       </div>
-      <div className="bottom">
-        <div className="icons">
-          <IconPhotoScan />
-          <IconCamera />
-          <IconMicrophone />
-        </div>
-        <input
-          type="text"
-          placeholder="Type a message.."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        <div className="emoji">
-          <IconMoodHappyFilled
-            onClick={() => setOpen((prev) => !prev)}
-            className="emojipick"
+      <div className="bottom relative">
+        {file && (
+          <div
+            className={`file-preview flex  absolute top-0 max-w-80 ${
+              file.type.startsWith("image/") ? "items-start" : "items-center"
+            }`}
+          >
+            {file.type.startsWith("image/") ? (
+              <img
+                src={URL.createObjectURL(file)}
+                alt="Selected"
+                className="max-w-28 h-24 mr-2"
+              />
+            ) : file.type.startsWith("audio/") ? (
+              <IconMicrophone className="mr-2" />
+            ) : file.type.startsWith("video/") ? (
+              <IconCamera className="mr-2" />
+            ) : file.type === "application/pdf" ? (
+              <IconFileFilled className="mr-2" />
+            ) : (
+              <IconFileFilled className="mr-2" />
+            )}
+            <span className="text-sm">{file.name}</span>
+
+            <div
+              className="cancel ml-2 bg-zinc-500 rounded-lg p-0.5"
+              onClick={cancelFile}
+            >
+              <IconX width={15} height={15} />
+            </div>
+          </div>
+        )}
+        <form className="flex items-center w-full gap-3">
+          <div className="icons">
+            <label htmlFor="file">
+              <IconPhotoScan style={{ cursor: "pointer" }} />
+            </label>
+            <input
+              type="file"
+              id="file"
+              style={{ display: "none" }}
+              accept="image/*, audio/*, video/*, application/pdf"
+              onChange={handleFile}
+            />
+          </div>
+          <input
+            type="text"
+            placeholder="Type a message.."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
           />
-          <div className="picker" ref={emojiPickerRef}>
-            <EmojiPicker open={open} onEmojiClick={handleEmoji} />
+          <div className="emoji">
+            <IconMoodHappyFilled
+              onClick={() => setOpen((prev) => !prev)}
+              className="emojipick"
+            />
+            <div className="picker" ref={emojiPickerRef}>
+              <EmojiPicker open={open} onEmojiClick={handleEmoji} />
+            </div>
+          </div>
+          <button className="sendBtn" onClick={handleSend} type="submit">
+            Send
+          </button>
+        </form>
+      </div>
+      {popupMedia && (
+        <div className="popup-media" onClick={handleClosePopup}>
+          <div className="popup-content">
+            {popupMedia.type.startsWith("image/") && (
+              <img src={popupMedia.url} alt="Popup Media" />
+            )}
+            {popupMedia.type.startsWith("video/") && (
+              <video controls>
+                <source src={popupMedia.url} type={popupMedia.type} />
+                Your browser does not support the video tag.
+              </video>
+            )}
           </div>
         </div>
-        <button className="sendBtn">Send</button>
-      </div>
+      )}
     </div>
   );
 };

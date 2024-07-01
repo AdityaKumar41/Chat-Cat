@@ -1,21 +1,49 @@
 import React from "react";
 import "./Details.css";
 import {
-  IconArrowUp,
   IconCaretDownFilled,
   IconCaretUpFilled,
   IconDownload,
   IconShare,
 } from "@tabler/icons-react";
 import { SignOutButton } from "@clerk/clerk-react";
+import { useChatStore } from "../store/chatStore";
+import { useUserStore } from "../store/userStore";
+import { arrayRemove, arrayUnion, doc, updateDoc } from "firebase/firestore";
+import { db } from "../../lib/firebase";
+
 const Details = () => {
+  const { user, isReceiverBlocked, isCurrentUserBlocked, changeBlock } =
+    useChatStore();
+  const { currentUser } = useUserStore();
+
+  const handleBlock = async () => {
+    if (!user) return;
+
+    const userDocRef = doc(db, "users", currentUser.id);
+
+    try {
+      await updateDoc(userDocRef, {
+        blockedUsers: isReceiverBlocked
+          ? arrayRemove(user.id)
+          : arrayUnion(user.id),
+      });
+
+      changeBlock();
+    } catch (error) {
+      console.error("Error updating block status:", error);
+    }
+  };
+
   return (
     <div className="details">
       <div className="user">
-        <img src="/avatar.png" alt="" />
+        <img src={user?.imageUrl || "/avatar.png"} alt="" />
         <div className="text">
-          <h2>John doe</h2>
-          <p>Lorem, ipsum dolorasd.</p>
+          <h2>{user?.username}</h2>
+          <p>{`${user?.firstName || user?.fullName} ${
+            user?.lastName || ""
+          }`}</p>
         </div>
       </div>
       <div className="info">
@@ -29,7 +57,7 @@ const Details = () => {
         </div>
         <div className="option">
           <div className="title">
-            <span>Privicy & Help</span>
+            <span>Privacy & Help</span>
             <div className="mainImg">
               <IconCaretUpFilled className="img" />
             </div>
@@ -37,7 +65,7 @@ const Details = () => {
         </div>
         <div className="option">
           <div className="title">
-            <span>Shared Photo</span>
+            <span>Shared Photos</span>
             <div className="mainImg">
               <IconCaretDownFilled className="img" />
             </div>
@@ -79,7 +107,13 @@ const Details = () => {
               <IconShare className="img" />
             </div>
           </div>
-          <button className="btn blockBtn">Block User!</button>
+          <button className="btn blockBtn" onClick={handleBlock}>
+            {isCurrentUserBlocked
+              ? "Unblock"
+              : isReceiverBlocked
+              ? "You are blocked!"
+              : "Block"}
+          </button>
           <SignOutButton className="btn logoutBtn" />
         </div>
       </div>

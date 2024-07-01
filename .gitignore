@@ -1,4 +1,6 @@
 .env.local
+static.txt
+ngrok.exe
 # Logs
 logs
 *.log

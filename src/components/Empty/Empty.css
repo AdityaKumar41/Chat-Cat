@@ -1,0 +1,10 @@
+.emptychatlist {
+  flex: 2;
+  border-left: 1px solid #dddddd35;
+  border-right: 1px solid #dddddd35;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-image: url("/doodle.png");
+  background-size: contain;
+}

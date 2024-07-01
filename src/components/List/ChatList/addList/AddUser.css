@@ -11,6 +11,18 @@
   height: max-content;
   margin: auto;
   z-index: 1000;
+  .mainAddContainer {
+    padding: 3px;
+    overflow-x: auto;
+    max-height: 288px;
+  }
+  .mainAddContainer::-webkit-scrollbar {
+    width: 3px;
+  }
+  .mainAddContainer::-webkit-scrollbar-thumb {
+    background-color: #d9d9d96b;
+    border-radius: 10px;
+  }
   form {
     display: flex;
     gap: 20px;
@@ -24,22 +36,18 @@
       border-radius: 10px;
     }
     input {
-      padding: 10px 0;
+      padding: 7px 0;
       border-radius: 10px;
       border: none;
       outline: none;
       background-color: transparent;
       color: white;
     }
-    button {
-      padding: 20px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      background-color: #2e86de;
-      color: white;
-      cursor: pointer;
-    }
+    /* button {
+      width: 100%;
+      min-width: 100px;
+      max-width: 90px;
+    } */
   }
   .usersContainer {
     display: flex;
@@ -62,19 +70,15 @@
       object-fit: cover;
     }
     button {
-      padding: 10px;
-      border-radius: 10px;
-      border: none;
-      outline: none;
-      background-color: #2e86de;
-      color: white;
-      cursor: pointer;
       width: 100%;
-      min-width: 85px;
-      max-width: 85px;
-      .loader{
+      min-width: 90px;
+      max-width: 90px;
+      .loader {
         margin: auto;
       }
+    }
+    #selfBtn {
+      cursor: not-allowed;
     }
   }
 }
