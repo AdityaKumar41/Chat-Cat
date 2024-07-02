@@ -11,6 +11,8 @@ import {
   IconPhotoX,
   IconFileFilled,
   IconX,
+  IconDownload,
+  IconTrash,
 } from "@tabler/icons-react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
@@ -22,11 +24,17 @@ import {
   arrayUnion,
   getDoc,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import {
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+} from "firebase/storage";
 import EmojiPicker from "emoji-picker-react";
 import { useChatStore } from "../store/chatStore";
 import { useUserStore } from "../store/userStore";
 import { Toaster, toast } from "sonner";
+import { saveAs } from "file-saver";
 
 const Chat = () => {
   const [open, setOpen] = useState(false);
@@ -36,7 +44,14 @@ const Chat = () => {
   const [isLoading, setLoading] = useState(false);
   const [popupMedia, setPopupMedia] = useState(null);
   const emojiPickerRef = useRef(null);
-  const { chatId, user, setChat } = useChatStore();
+  const {
+    chatId,
+    user,
+    setChat,
+    setChatStore,
+    isCurrentUserBlocked,
+    isReceiverBlocked,
+  } = useChatStore();
   const { currentUser } = useUserStore();
   const notificationSoundRef = useRef(new Audio("./whatsapp_web.mp3"));
 
@@ -70,6 +85,7 @@ const Chat = () => {
   useEffect(() => {
     const unSub = onSnapshot(doc(db, "chats", chatId), (res) => {
       setChats(res.data());
+      setChatStore(res.data().messages);
     });
 
     const resetUnreadCount = async () => {
@@ -112,7 +128,7 @@ const Chat = () => {
     resetUnreadCount();
 
     return () => unSub();
-  }, [chatId, currentUser.id, user.id]);
+  }, [chatId, currentUser.id, user?.id]);
 
   const uploadFile = async (file) => {
     const storageRef = ref(storage, `chatFiles/${Date.now()}_${file.name}`);
@@ -214,6 +230,30 @@ const Chat = () => {
     setPopupMedia(null);
   };
 
+  const handleDelete = async (file) => {
+    try {
+      // Construct a reference to the file in Firebase Storage
+      const storageRef = ref(storage, file.url);
+
+      // Delete the file from Firebase Storage
+      await deleteObject(storageRef);
+
+      // Remove the message from the messages array in Firestore
+      await updateDoc(doc(db, "chats", chatId), {
+        messages: chats.messages.filter(
+          (msg) => msg.file && msg.file.url !== file.url
+        ),
+      });
+
+      toast.success("File deleted successfully!");
+
+      // Close the popup or update the UI as needed
+      handleClosePopup();
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast.error("Failed to delete file. Please try again later.");
+    }
+  };
   const renderMedia = (message) => {
     if (message.file) {
       if (message.file.type.startsWith("image/")) {
@@ -323,7 +363,7 @@ const Chat = () => {
               key={chat?.createdAt}
             >
               {chat.senderId !== currentUser.id && (
-                <img src={user.imageUrl} alt="" />
+                <img src={user?.imageUrl || "./avatar.png"} alt="" />
               )}
               <div className="texts">
                 {renderMedia(chat)}
@@ -383,13 +423,18 @@ const Chat = () => {
               style={{ display: "none" }}
               accept="image/*, audio/*, video/*, application/pdf"
               onChange={handleFile}
+              disabled={isReceiverBlocked || isCurrentUserBlocked}
             />
           </div>
           <input
             type="text"
-            placeholder="Type a message.."
+            className={`${isCurrentUserBlocked && "cursor-not-allowed"}`}
+            placeholder={`${
+              isCurrentUserBlocked ? "You are blocked!" : "Type a message"
+            }`}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
+            disabled={isReceiverBlocked || isCurrentUserBlocked}
           />
           <div className="emoji">
             <IconMoodHappyFilled
@@ -400,14 +445,24 @@ const Chat = () => {
               <EmojiPicker open={open} onEmojiClick={handleEmoji} />
             </div>
           </div>
-          <button className="sendBtn" onClick={handleSend} type="submit">
+          <button
+            className={`sendBtn ${
+              isCurrentUserBlocked && "cursor-not-allowed"
+            }`}
+            onClick={handleSend}
+            type="submit"
+            disabled={isReceiverBlocked || isCurrentUserBlocked}
+          >
             Send
           </button>
         </form>
       </div>
       {popupMedia && (
         <div className="popup-media" onClick={handleClosePopup}>
-          <div className="popup-content">
+          <a className="absolute top-2 right-5" href={popupMedia.url} download>
+            <IconDownload />
+          </a>
+          <div className="popup-content" onClick={(e) => e.stopPropagation()}>
             {popupMedia.type.startsWith("image/") && (
               <img src={popupMedia.url} alt="Popup Media" />
             )}
@@ -417,6 +472,12 @@ const Chat = () => {
                 Your browser does not support the video tag.
               </video>
             )}
+          </div>
+          <div
+            className="absolute top-2 right-16 cursor-pointer"
+            onClick={() => handleDelete(popupMedia)}
+          >
+            <IconTrash />
           </div>
         </div>
       )}

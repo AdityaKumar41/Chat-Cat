@@ -3,8 +3,10 @@ const { Webhook } = require("svix");
 const bodyParser = require("body-parser");
 const admin = require("firebase-admin");
 require("dotenv").config();
+const cors = require("cors");
 
 const app = express();
+app.use(cors());
 const PORT = process.env.PORT || 3000;
 admin.initializeApp({
   credential: admin.credential.cert(

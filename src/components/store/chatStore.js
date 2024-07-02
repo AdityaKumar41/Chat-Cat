@@ -1,56 +1,53 @@
 import { create } from "zustand";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../lib/firebase";
 import { useUserStore } from "./userStore";
+
 export const useChatStore = create((set) => ({
   chatId: null,
   user: null,
-  isCurrentUserblocked: false,
-  isReciverBlocked: false,
+  isCurrentUserBlocked: false,
+  isReceiverBlocked: false,
   selectedChat: false,
+  chatStore: null,
+  setChatStore: (value) => set({ chatStore: value }),
   setChat: (value) => set({ selectedChat: value }),
+  setUser: (value) => set({ user: value }),
   changeChat: (chatId, user) => {
     const currentUser = useUserStore.getState().currentUser;
-    // Check if the current user is blocked
     if (user.blockedUsers.includes(currentUser.id)) {
       return set({
-        chatId: null,
+        chatId,
         user: null,
-        isCurrentUserblocked: true,
-        isReciverBlocked: false,
+        isCurrentUserBlocked: true,
+        isReceiverBlocked: false,
       });
-    }
-
-    // Check if the receiver is blocked
-    else if (currentUser.blockedUsers.includes(user.id)) {
+    } else if (currentUser.blockedUsers.includes(user.id)) {
       return set({
-        chatId: null,
-        user: null,
-        isCurrentUserblocked: false,
-        isReciverBlocked: true,
+        chatId,
+        user: user,
+        isCurrentUserBlocked: false,
+        isReceiverBlocked: true,
       });
     } else {
       return set({
         chatId,
         user,
-        isCurrentUserblocked: false,
-        isReciverBlocked: false,
+        isCurrentUserBlocked: false,
+        isReceiverBlocked: false,
       });
     }
   },
-  // chnage block status
   changeBlock: () => {
     set((state) => ({
       ...state,
-      isReciverBlocked: !state.isReciverBlocked,
+      isReceiverBlocked: !state.isReceiverBlocked,
     }));
   },
   resetUser: () => {
     set({
       chatId: null,
       user: null,
-      isCurrentUserblocked: false,
-      isReciverBlocked: false,
+      isCurrentUserBlocked: false,
+      isReceiverBlocked: false,
     });
   },
 }));

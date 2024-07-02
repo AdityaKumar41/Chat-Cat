@@ -1,6 +1,5 @@
 .details {
   flex: 1;
-  overflow-y: scroll;
 
   .user {
     padding: 30px 20px;
@@ -24,12 +23,18 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-top: -4px;
+        padding: 7px;
       }
       .photos {
         display: flex;
         flex-direction: column;
         gap: 20px;
         margin: 10px 0px;
+        max-height: 200px;
+        height: 200px;
+        overflow-y: scroll;
+        overflow-x: hidden;
         .photoItem {
           display: flex;
           align-items: center;
@@ -38,6 +43,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            .iconsI {
+              background-color: rgb(17, 25, 40, 0.5);
+              padding: 7px;
+            }
             img {
               width: 40px;
               height: 40px;
@@ -52,8 +61,14 @@
           }
         }
       }
-      button {
-        margin: 10px 0px;
+      ::-webkit-scrollbar {
+        background: #ffffff11;
+        width: 6px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #dddddd35;
+        border-radius: 10px;
+        cursor: pointer;
       }
     }
   }
@@ -62,8 +77,10 @@
     background-color: rgb(17, 25, 40, 0.3);
     border-radius: 50%;
     cursor: pointer;
+    width: 37px;
+    height: 37px;
     .img {
-      width: 30px;
+      width: 27px;
     }
   }
   .btn {

@@ -14,9 +14,14 @@ const Chatlist = () => {
   const [addMode, setAddmode] = useState(false);
   const [chats, setChats] = useState([]);
   const [loadingChat, setLoadingChat] = useState(false);
+  const [input, setInput] = useState("");
   const { currentUser } = useUserStore();
   const { changeChat, chatId, selectedChat } = useChatStore();
   const addUserRef = useRef(null);
+
+  const handleSearch = chats.filter((e) => {
+    return e.user.username.toLowerCase().includes(input.toLowerCase().trim());
+  });
 
   const handleOutsideClick = (event) => {
     if (addUserRef.current && !addUserRef.current.contains(event.target)) {
@@ -98,7 +103,11 @@ const Chatlist = () => {
         <div className="search">
           <div className="userSearch">
             <IconSearch />
-            <input type="search" placeholder="Search" />
+            <input
+              type="search"
+              placeholder="Search"
+              onChange={(e) => setInput(e.target.value)}
+            />
           </div>
           <div className="addUser" onClick={() => setAddmode((prev) => !prev)}>
             {addMode ? (
@@ -119,7 +128,7 @@ const Chatlist = () => {
             />
           </>
         ) : chats.length > 0 ? (
-          chats.map((chat) => (
+          handleSearch.map((chat) => (
             <div
               className="items"
               key={chat.chatId}
@@ -128,9 +137,20 @@ const Chatlist = () => {
               {!chat.isSeen && !selectedChat && (
                 <div className="badge">{chat.unreadCount}+</div>
               )}
-              <img src={chat.user.imageUrl} alt="" />
+              <img
+                src={
+                  chat.user.blockedUsers.includes(currentUser.id)
+                    ? "./avatar.png"
+                    : chat.user.imageUrl
+                }
+                alt=""
+              />
               <div className="itemsInfo">
-                <span>{chat.user.username}</span>
+                <span>
+                  {chat.user.blockedUsers.includes(currentUser.id)
+                    ? "User"
+                    : chat.user.username}
+                </span>
                 <p>
                   {chat.lastMessage.length > 30
                     ? `${chat.lastMessage.substring(0, 30)}...`

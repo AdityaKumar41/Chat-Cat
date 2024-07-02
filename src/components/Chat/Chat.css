@@ -216,19 +216,8 @@
       outline: none;
       color: white;
       border-radius: 10px;
-      cursor: pointer;
     }
-    &.disabled {
-      input {
-        background-color: #ffffff11;
-        color: #ffffff44;
-      }
-      .sendBtn {
-        background-color: #2e86de9d;
-        color: #ffffff44;
-        cursor: not-allowed;
-      }
-    }
+
     .emojipick {
       cursor: pointer;
     }
