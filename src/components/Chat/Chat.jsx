@@ -229,31 +229,35 @@ const Chat = () => {
   const handleClosePopup = () => {
     setPopupMedia(null);
   };
-
   const handleDelete = async (file) => {
     try {
-      // Construct a reference to the file in Firebase Storage
       const storageRef = ref(storage, file.url);
 
       // Delete the file from Firebase Storage
       await deleteObject(storageRef);
+      const updatedMessages = chats.messages.filter(
+        (msg) => !(msg.file && msg.file.url === file.url)
+      );
 
-      // Remove the message from the messages array in Firestore
       await updateDoc(doc(db, "chats", chatId), {
-        messages: chats.messages.filter(
-          (msg) => msg.file && msg.file.url !== file.url
-        ),
+        messages: updatedMessages,
       });
+
+      // Optimistically update the local state
+      setChats((prevChats) => ({
+        ...prevChats,
+        messages: updatedMessages,
+      }));
 
       toast.success("File deleted successfully!");
 
-      // Close the popup or update the UI as needed
       handleClosePopup();
     } catch (error) {
       console.error("Error deleting file:", error);
       toast.error("Failed to delete file. Please try again later.");
     }
   };
+
   const renderMedia = (message) => {
     if (message.file) {
       if (message.file.type.startsWith("image/")) {
@@ -360,7 +364,7 @@ const Chat = () => {
               className={`messages ${
                 chat.senderId === currentUser.id ? "own" : ""
               } relative`}
-              key={chat?.createdAt}
+              key={chat.createdAt}
             >
               {chat.senderId !== currentUser.id && (
                 <img src={user?.imageUrl || "./avatar.png"} alt="" />
@@ -374,6 +378,12 @@ const Chat = () => {
                     minute: "2-digit",
                   })}
                 </span>
+                {/* {chat.senderId === currentUser.id && (
+                  <IconTrash
+                    onClick={() => handleDelete(chat)}
+                    className="delete-btn absolute -top-1 -right-1  p-1.5 cursor-pointer"
+                  />
+                )} */}
               </div>
             </div>
           ))

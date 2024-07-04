@@ -1,6 +1,7 @@
 .env.local
 static.txt
 ngrok.exe
+backend.zip
 # Logs
 logs
 *.log
