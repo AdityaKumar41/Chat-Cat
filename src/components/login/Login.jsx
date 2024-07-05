@@ -4,7 +4,7 @@ import { SignInButton } from "@clerk/clerk-react";
 
 const Login = () => {
   return (
-    <div className="mx-auto h-full bgimage flex flex-col gap-5">
+    <div className="bgimage">
       <div>
         <img src="./Chatcat.png" width={100} height={5} alt="" />
       </div>

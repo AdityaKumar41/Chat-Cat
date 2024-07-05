@@ -1,5 +1,5 @@
 .bgimage {
-  background-image: url("./chat.png");
+  background-image: url("../../../public/chat.png");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -9,4 +9,8 @@
   justify-content: center;
   align-items: center;
   border-radius: 10px;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin: 0 auto;
+  height: 100%;
 }
